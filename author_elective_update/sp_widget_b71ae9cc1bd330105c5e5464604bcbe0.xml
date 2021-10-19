@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_widget">
+    <sp_widget action="DELETE">
+        <category>custom</category>
+        <client_script><![CDATA[api.controller=function($location, spUtil) {
+  var c = this;
+	
+	c.select = function(item_id) {
+		if (c.openItem == item_id) {
+			c.openItem = null;
+			return;
+		}
+		
+		renderCatalogItemWidget(item_id);
+	}
+	
+	function renderCatalogItemWidget(item_id) {
+		c.catalogItemWidget = null;
+		spUtil.get("widget-sc-cat-item", {sys_id: item_id}).then(function(response){
+			c.catalogItemWidget = response;
+			c.openItem = item_id;
+		});
+	}
+}]]></client_script>
+        <controller_as>c</controller_as>
+        <css>.result-container {
+ margin-top: 10px;
+}</css>
+        <data_table>sp_instance</data_table>
+        <demo_data/>
+        <description/>
+        <docs/>
+        <field_list/>
+        <has_preview>false</has_preview>
+        <id>quick_order</id>
+        <internal>false</internal>
+        <link><![CDATA[function link(scope, element, attrs, controller) {  }]]></link>
+        <name>Quick Order</name>
+        <option_schema/>
+        <public>false</public>
+        <roles/>
+        <script><![CDATA[(function() {
+	if (input.keywords != null && input.keywords != '')
+		data.items = getCatalogItems(input.keywords);
+	else data.items = getPopularItems();
+
+	function getCatalogItems(keywords) {
+		var sc = new GlideRecord('sc_cat_item');
+		sc.addActiveQuery();
+		sc.addQuery('123TEXTQUERY321', keywords);
+		sc.addQuery('sys_class_name', 'NOT IN', 'sc_cat_item_wizard,sc_cat_item_content');
+		sc.addQuery('sc_catalogs', 'e0d08b13c3330100c8b837659bba8fb4');
+		sc.setLimit(100);
+		sc.orderByDesc("ir_query_score");
+		sc.query();
+		var results = [];
+		while (sc.next()) {
+			if (!$sp.canReadRecord(sc))
+				continue;
+
+			var item = {};
+			$sp.getRecordDisplayValues(item, sc, 'name,price,sys_id');
+			item.category = sc.getValue('category');
+			results.push(item);
+		}
+		return results;
+	}
+	
+	function getPopularItems() {
+		var items = [];
+		var count = new GlideAggregate('sc_req_item');
+		count.addAggregate('COUNT','cat_item');
+		count.groupBy('cat_item');
+		count.addQuery('cat_item.sys_class_name', 'NOT IN', 'sc_cat_item_guide,sc_cat_item_wizard,sc_cat_item_content');
+		count.addQuery('cat_item.sc_catalogs', 'e0d08b13c3330100c8b837659bba8fb4');
+		count.orderByAggregate('COUNT', 'cat_item');
+		count.query();
+		while (count.next() && items.length < 9) {
+			if (!$sp.canReadRecord("sc_cat_item", count.cat_item.sys_id.getDisplayValue()))
+				continue; // user does not have permission to see this item
+
+			var item = {};
+			item.name = count.cat_item.name.getDisplayValue();
+			item.category = count.cat_item.category.toString();
+			item.price = count.cat_item.price.getDisplayValue();
+			item.sys_id = count.cat_item.sys_id.getDisplayValue();
+			items.push(item);
+		}
+		return items;
+	}
+})();]]></script>
+        <servicenow>false</servicenow>
+        <sys_class_name>sp_widget</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2021-10-14 20:39:38</sys_created_on>
+        <sys_id>b71ae9cc1bd330105c5e5464604bcbe0</sys_id>
+        <sys_mod_count>7</sys_mod_count>
+        <sys_name>Quick Order</sys_name>
+        <sys_package display_value="NeedIt" source="x_58872_needit">6ead8e780f603200cd674f8ce1050ed1</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="NeedIt">6ead8e780f603200cd674f8ce1050ed1</sys_scope>
+        <sys_update_name>sp_widget_b71ae9cc1bd330105c5e5464604bcbe0</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2021-10-14 20:52:05</sys_updated_on>
+        <template><![CDATA[<div class="panel panel-primary">
+  <div class="panel-heading">Request an item from the catalog</div>
+  <div class="panel-body">
+    <input class="form-control" type="search" placeholder="Start typing here to search the list of catalog items" ng-model="c.data.keywords" ng-change="c.server.update()" ng-model-options="{debounce: 250}" />
+    <h5 ng-if="!c.data.keywords">Showing the most popular items</h5>
+    <ul class="list-group result-container">
+      <li class="list-group-item" ng-repeat="item in c.data.items">
+        <a href>{{item.name}}</a><span class="pull-right">{{item.price}}</span>
+      </li>
+    </ul>
+  </div>
+  <div class="panel-footer" ng-if="c.data.keywords">
+    <ng-pluralize count="c.data.items.length"
+                 when="{'0': 'No items found for ',
+                     '1': 'One item matching ',
+                     'other': 'Found {} items matching '}">
+    </ng-pluralize>
+    {{c.data.keywords}}
+  </div>
+</div>]]></template>
+    </sp_widget>
+    <sys_update_version action="INSERT_OR_UPDATE">
+        <action>DELETE</action>
+        <application display_value="NeedIt">6ead8e780f603200cd674f8ce1050ed1</application>
+        <file_path/>
+        <instance_id>8f7611c91b2f2010e84d2f8dee4bcb5e</instance_id>
+        <instance_name>dev111758</instance_name>
+        <name>sp_widget_b71ae9cc1bd330105c5e5464604bcbe0</name>
+        <payload>&lt;?xml version="1.0" encoding="UTF-8"?&gt;&lt;record_update table="sp_widget"&gt;&lt;sp_widget action="INSERT_OR_UPDATE"&gt;&lt;category&gt;custom&lt;/category&gt;&lt;client_script&gt;&lt;![CDATA[api.controller=function($location, spUtil) {
+  var c = this;
+	
+	c.select = function(item_id) {
+		if (c.openItem == item_id) {
+			c.openItem = null;
+			return;
+		}
+		
+		renderCatalogItemWidget(item_id);
+	}
+	
+	function renderCatalogItemWidget(item_id) {
+		c.catalogItemWidget = null;
+		spUtil.get("widget-sc-cat-item", {sys_id: item_id}).then(function(response){
+			c.catalogItemWidget = response;
+			c.openItem = item_id;
+		});
+	}
+}]]&gt;&lt;/client_script&gt;&lt;controller_as&gt;c&lt;/controller_as&gt;&lt;css&gt;.result-container {
+ margin-top: 10px;
+}&lt;/css&gt;&lt;data_table&gt;sp_instance&lt;/data_table&gt;&lt;demo_data/&gt;&lt;description/&gt;&lt;docs/&gt;&lt;field_list/&gt;&lt;has_preview&gt;false&lt;/has_preview&gt;&lt;id&gt;quick_order&lt;/id&gt;&lt;internal&gt;false&lt;/internal&gt;&lt;link&gt;&lt;![CDATA[function link(scope, element, attrs, controller) {  }]]&gt;&lt;/link&gt;&lt;name&gt;Quick Order&lt;/name&gt;&lt;option_schema/&gt;&lt;public&gt;false&lt;/public&gt;&lt;roles/&gt;&lt;script&gt;&lt;![CDATA[(function() {
+	if (input.keywords != null &amp;&amp; input.keywords != '')
+		data.items = getCatalogItems(input.keywords);
+	else data.items = getPopularItems();
+
+	function getCatalogItems(keywords) {
+		var sc = new GlideRecord('sc_cat_item');
+		sc.addActiveQuery();
+		sc.addQuery('123TEXTQUERY321', keywords);
+		sc.addQuery('sys_class_name', 'NOT IN', 'sc_cat_item_wizard,sc_cat_item_content');
+		sc.addQuery('sc_catalogs', 'e0d08b13c3330100c8b837659bba8fb4');
+		sc.setLimit(100);
+		sc.orderByDesc("ir_query_score");
+		sc.query();
+		var results = [];
+		while (sc.next()) {
+			if (!$sp.canReadRecord(sc))
+				continue;
+
+			var item = {};
+			$sp.getRecordDisplayValues(item, sc, 'name,price,sys_id');
+			item.category = sc.getValue('category');
+			results.push(item);
+		}
+		return results;
+	}
+	
+	function getPopularItems() {
+		var items = [];
+		var count = new GlideAggregate('sc_req_item');
+		count.addAggregate('COUNT','cat_item');
+		count.groupBy('cat_item');
+		count.addQuery('cat_item.sys_class_name', 'NOT IN', 'sc_cat_item_guide,sc_cat_item_wizard,sc_cat_item_content');
+		count.addQuery('cat_item.sc_catalogs', 'e0d08b13c3330100c8b837659bba8fb4');
+		count.orderByAggregate('COUNT', 'cat_item');
+		count.query();
+		while (count.next() &amp;&amp; items.length &lt; 9) {
+			if (!$sp.canReadRecord("sc_cat_item", count.cat_item.sys_id.getDisplayValue()))
+				continue; // user does not have permission to see this item
+
+			var item = {};
+			item.name = count.cat_item.name.getDisplayValue();
+			item.category = count.cat_item.category.toString();
+			item.price = count.cat_item.price.getDisplayValue();
+			item.sys_id = count.cat_item.sys_id.getDisplayValue();
+			items.push(item);
+		}
+		return items;
+	}
+})();]]&gt;&lt;/script&gt;&lt;servicenow&gt;false&lt;/servicenow&gt;&lt;sys_class_name&gt;sp_widget&lt;/sys_class_name&gt;&lt;sys_created_by&gt;admin&lt;/sys_created_by&gt;&lt;sys_created_on&gt;2021-10-14 20:39:38&lt;/sys_created_on&gt;&lt;sys_id&gt;b71ae9cc1bd330105c5e5464604bcbe0&lt;/sys_id&gt;&lt;sys_mod_count&gt;7&lt;/sys_mod_count&gt;&lt;sys_name&gt;Quick Order&lt;/sys_name&gt;&lt;sys_package display_value="NeedIt" source="x_58872_needit"&gt;6ead8e780f603200cd674f8ce1050ed1&lt;/sys_package&gt;&lt;sys_policy/&gt;&lt;sys_scope display_value="NeedIt"&gt;6ead8e780f603200cd674f8ce1050ed1&lt;/sys_scope&gt;&lt;sys_update_name&gt;sp_widget_b71ae9cc1bd330105c5e5464604bcbe0&lt;/sys_update_name&gt;&lt;sys_updated_by&gt;admin&lt;/sys_updated_by&gt;&lt;sys_updated_on&gt;2021-10-14 20:52:05&lt;/sys_updated_on&gt;&lt;template&gt;&lt;![CDATA[&lt;div class="panel panel-primary"&gt;
+  &lt;div class="panel-heading"&gt;Request an item from the catalog&lt;/div&gt;
+  &lt;div class="panel-body"&gt;
+    &lt;input class="form-control" type="search" placeholder="Start typing here to search the list of catalog items" ng-model="c.data.keywords" ng-change="c.server.update()" ng-model-options="{debounce: 250}" /&gt;
+    &lt;h5 ng-if="!c.data.keywords"&gt;Showing the most popular items&lt;/h5&gt;
+    &lt;ul class="list-group result-container"&gt;
+      &lt;li class="list-group-item" ng-repeat="item in c.data.items"&gt;
+        &lt;a href&gt;{{item.name}}&lt;/a&gt;&lt;span class="pull-right"&gt;{{item.price}}&lt;/span&gt;
+      &lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/div&gt;
+  &lt;div class="panel-footer" ng-if="c.data.keywords"&gt;
+    &lt;ng-pluralize count="c.data.items.length"
+                 when="{'0': 'No items found for ',
+                     '1': 'One item matching ',
+                     'other': 'Found {} items matching '}"&gt;
+    &lt;/ng-pluralize&gt;
+    {{c.data.keywords}}
+  &lt;/div&gt;
+&lt;/div&gt;]]&gt;&lt;/template&gt;&lt;/sp_widget&gt;&lt;/record_update&gt;</payload>
+        <payload_hash>106338371</payload_hash>
+        <record_name>Quick Order</record_name>
+        <reverted_from/>
+        <source>89aac01d1b3230105c5e5464604bcb6d</source>
+        <source_table>sys_update_set</source_table>
+        <state>previous</state>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2021-10-14 20:52:05</sys_created_on>
+        <sys_id>56fc29801b1730105c5e5464604bcb86</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_recorded_at>17c80938c550000001</sys_recorded_at>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2021-10-14 20:52:05</sys_updated_on>
+        <type>Widget</type>
+        <update_guid>56fc6d40851730105ed9eb0fda75ccb0</update_guid>
+        <update_guid_history>56fc6d40851730105ed9eb0fda75ccb0:106338371,486ce540aa173010233baba515fe21c2:181292259,b64c6d4068173010952cb25f02db54a5:-893192091,5f1bed8cbfd33010d350aded6345d83b:-1224514335,66fa2900e317301054e6a626fda6be12:-94712072,45ca65005c173010fb018e7f1a6f4a20:-699594924,653a6dcc8ed33010d9eb6dd2da00e131:1652766607,7f1ae9cc16d330108dd242364bc6e6e3:-2138332823</update_guid_history>
+    </sys_update_version>
+    <sys_metadata_delete action="INSERT_OR_UPDATE">
+        <sys_audit_delete display_value="Quick Order">0c1da9801b1730105c5e5464604bcb27</sys_audit_delete>
+        <sys_class_name>sys_metadata_delete</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2021-10-14 20:52:29</sys_created_on>
+        <sys_db_object display_value="" name="sp_widget">sp_widget</sys_db_object>
+        <sys_id>1274811030134fe48185ea1ebe79c224</sys_id>
+        <sys_metadata>b71ae9cc1bd330105c5e5464604bcbe0</sys_metadata>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>Quick Order</sys_name>
+        <sys_package display_value="NeedIt" source="x_58872_needit">6ead8e780f603200cd674f8ce1050ed1</sys_package>
+        <sys_parent/>
+        <sys_policy/>
+        <sys_scope display_value="NeedIt">6ead8e780f603200cd674f8ce1050ed1</sys_scope>
+        <sys_scope_delete display_value="">94872a8897db403e8ee69a431de2fca4</sys_scope_delete>
+        <sys_update_name>sp_widget_b71ae9cc1bd330105c5e5464604bcbe0</sys_update_name>
+        <sys_update_version display_value="sp_widget_b71ae9cc1bd330105c5e5464604bcbe0">56fc29801b1730105c5e5464604bcb86</sys_update_version>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2021-10-14 20:52:29</sys_updated_on>
+    </sys_metadata_delete>
+</record_update>
